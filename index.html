@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>LIBERTY DRIVE — A Road Adventure</title>
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<div id="app">
+
+  <!-- SPLASH -->
+  <div class="screen active" id="screen-splash">
+    <div class="logo-wrap">
+      <div class="logo-badge">🚗</div>
+      <div class="logo-title">LIBERTY DRIVE</div>
+      <div class="logo-sub">An Open Road Adventure</div>
+    </div>
+    <div id="splashTap">Tap or press Enter to continue</div>
+    <div id="loadingNote"></div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div class="screen" id="screen-menu">
+    <div class="currency-chip">🪙 <span id="menuCoins">0</span></div>
+    <div class="menu-title">
+      <div class="logo-title">LIBERTY DRIVE</div>
+      <div class="eyebrow">Chapter <span id="menuChapter">1</span> · <span id="menuChapterName">The Beginning</span></div>
+    </div>
+    <div class="menu-card">
+      <button class="btn primary" id="btnPlay">▶ Continue Journey</button>
+      <button class="btn accent" id="btnGarage">🔧 Garage</button>
+      <button class="btn ghost" id="btnMaps">🗺 Maps &amp; Levels</button>
+      <button class="btn ghost" id="btnSettings">⚙ Settings</button>
+    </div>
+  </div>
+
+  <!-- GARAGE -->
+  <div class="screen" id="screen-garage">
+    <div class="subheader">
+      <button class="btn ghost" data-back="screen-menu">← Back</button>
+      <h2>Garage</h2>
+      <div class="spacer"></div>
+      <div class="pill">🪙 <span id="garageCoins">0</span></div>
+    </div>
+    <div class="subbody">
+      <div class="car-tabs" id="carTabs"></div>
+      <div class="garage-grid">
+        <div class="car-preview">
+          <canvas id="carPreviewCanvas" width="220" height="220"></canvas>
+          <h3 id="carName">—</h3>
+          <div class="eyebrow" id="carTagline">—</div>
+          <button class="btn primary" id="btnSelectCar">Select Car</button>
+          <button class="btn accent" id="btnUnlockCar" style="display:none;">Unlock — 🪙 <span id="unlockCost">0</span></button>
+        </div>
+        <div class="stats-panel">
+          <div class="eyebrow">Performance</div>
+          <div id="statRows"></div>
+          <div class="eyebrow" style="margin-top:10px;">Upgrades</div>
+          <div id="upgradeRows"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP SELECT -->
+  <div class="screen" id="screen-maps">
+    <div class="subheader">
+      <button class="btn ghost" data-back="screen-menu">← Back</button>
+      <h2>Choose a Route</h2>
+    </div>
+    <div class="subbody">
+      <div class="map-grid" id="mapGrid"></div>
+    </div>
+  </div>
+
+  <!-- LEVEL SELECT -->
+  <div class="screen" id="screen-levels">
+    <div class="subheader">
+      <button class="btn ghost" data-back="screen-maps">← Back</button>
+      <h2 id="levelsMapTitle">Route</h2>
+    </div>
+    <div class="subbody">
+      <div class="level-grid" id="levelGrid"></div>
+    </div>
+  </div>
+
+  <!-- STORY -->
+  <div class="screen" id="screen-story">
+    <div class="story-box">
+      <div class="story-chapter" id="storyChapter">Chapter 1 — The Beginning</div>
+      <div class="story-speaker" id="storySpeaker">—</div>
+      <div class="story-text" id="storyText">—</div>
+      <div class="row">
+        <div class="spacer"></div>
+        <button class="btn primary" id="btnStoryContinue">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div class="screen" id="screen-game">
+    <div id="gameCanvasWrap">
+      <canvas id="game" width="480" height="800"></canvas>
+      <div id="hud">
+        <div class="hud-panel">
+          <div class="hud-label">Health</div>
+          <div id="healthBarOuter"><div id="healthBarInner"></div></div>
+          <div class="hud-label" style="margin-top:6px;">Nitro</div>
+          <div id="nitroBarOuter"><div id="nitroBarInner"></div></div>
+        </div>
+        <div class="hud-panel" style="text-align:right;">
+          <div class="hud-label">Speed</div>
+          <div class="hud-value" id="hudSpeed">0</div>
+          <div class="hud-label" style="margin-top:6px;">🪙 <span id="hudCoins">0</span></div>
+        </div>
+      </div>
+      <div id="objectiveBar" class="hud-panel">
+        <div class="hud-label">Objective</div>
+        <div id="objectiveText" style="font-size:12px; font-weight:700;">Reach the finish line</div>
+      </div>
+      <div id="pauseBtn"><button class="btn ghost">⏸</button></div>
+
+      <div id="touchControls">
+        <div class="touch-cluster">
+          <div class="touch-btn" id="touchLeft">◀</div>
+          <div class="touch-btn" id="touchRight">▶</div>
+        </div>
+        <div class="touch-cluster">
+          <div class="touch-btn brake" id="touchBrake">▼</div>
+          <div class="touch-btn" id="touchUp">▲</div>
+        </div>
+      </div>
+      <button id="nitroBtn">NITRO</button>
+
+      <!-- PAUSE MODAL -->
+      <div class="modal-overlay" id="modalPause">
+        <div class="modal-box">
+          <h2>Paused</h2>
+          <button class="btn primary" id="btnResume">Resume</button>
+          <button class="btn ghost" id="btnRestartLevel">Restart Level</button>
+          <button class="btn ghost" id="btnPauseSettings">Settings</button>
+          <button class="btn ghost" id="btnPauseMenu">Main Menu</button>
+        </div>
+      </div>
+
+      <!-- RESULTS MODAL -->
+      <div class="modal-overlay" id="modalResults">
+        <div class="modal-box">
+          <h2 id="resultsTitle">Level Complete</h2>
+          <div class="results-stars" id="resultsStars">★★★</div>
+          <div>
+            <div class="stat-line"><span>Coins collected</span><b id="resCoins">0</b></div>
+            <div class="stat-line"><span>Health remaining</span><b id="resHealth">0%</b></div>
+            <div class="stat-line"><span>Reward</span><b id="resReward">0 🪙</b></div>
+          </div>
+          <button class="btn primary" id="btnNextLevel">Next Level →</button>
+          <button class="btn ghost" id="btnRetryLevel">Retry</button>
+          <button class="btn ghost" id="btnResultsMenu">Main Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="subheader">
+      <button class="btn ghost" id="btnSettingsBack">← Back</button>
+      <h2>Settings</h2>
+    </div>
+    <div class="subbody">
+      <div class="settings-row">
+        <div class="eyebrow">Music Volume</div>
+        <input type="range" id="musicVol" min="0" max="100" value="60">
+      </div>
+      <div class="settings-row">
+        <div class="eyebrow">Sound Effects Volume</div>
+        <input type="range" id="sfxVol" min="0" max="100" value="80">
+      </div>
+      <div class="controls-legend">
+        <span><kbd>↑</kbd> Accelerate</span>
+        <span><kbd>↓</kbd> Brake / Reverse</span>
+        <span><kbd>←</kbd><kbd>→</kbd> Steer</span>
+        <span><kbd>Space</kbd> Nitro</span>
+        <span><kbd>Esc</kbd> Pause</span>
+        <span><kbd>Enter</kbd> Confirm</span>
+      </div>
+      <button class="btn ghost" id="btnResetProgress" style="margin-top:20px; border-color:var(--red); color:var(--red);">Reset All Progress</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="game.js"></script>
+
+</body>
+</html>

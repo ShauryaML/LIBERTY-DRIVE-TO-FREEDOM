@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>LIBERTY DRIVE — A Road Adventure</title>
+<style>
+  :root{
+    --bg-0:#070a14;
+    --bg-1:#0d1226;
+    --panel:#111633;
+    --panel-2:#161c3d;
+    --border:#2a3466;
+    --gold:#f5c451;
+    --cyan:#4fd1ff;
+    --red:#ff5f6d;
+    --green:#5fd68a;
+    --text:#eef1ff;
+    --text-dim:#8a93c2;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg-0);color:var(--text);
+    font-family:'Segoe UI',system-ui,sans-serif; overflow:hidden;}
+  #app{position:relative; width:100vw; height:100vh; overflow:hidden;}
+  .screen{position:absolute; inset:0; display:none; flex-direction:column;
+    background:radial-gradient(1200px 800px at 50% -10%, var(--bg-1), var(--bg-0));}
+  .screen.active{display:flex;}
+  h1,h2,h3{margin:0; font-weight:800; letter-spacing:0.02em;}
+  .eyebrow{font-size:clamp(10px,1.4vw,12px); letter-spacing:0.18em; text-transform:uppercase; color:var(--text-dim);}
+  .btn{
+    appearance:none; border:1px solid var(--border); background:var(--panel-2); color:var(--text);
+    padding:clamp(10px,1.6vw,14px) clamp(16px,2.6vw,26px); border-radius:10px; font-size:clamp(13px,1.6vw,16px);
+    font-weight:700; cursor:pointer; letter-spacing:0.02em; transition:transform .1s, filter .1s, background .15s;
+  }
+  .btn:hover{filter:brightness(1.15);}
+  .btn:active{transform:scale(0.97);}
+  .btn.primary{background:linear-gradient(180deg,var(--gold),#c9932c); color:#1a1200; border:none;}
+  .btn.accent{background:linear-gradient(180deg,var(--cyan),#1f7fa8); color:#03131c; border:none;}
+  .btn.ghost{background:transparent;}
+  .btn:disabled{opacity:0.4; cursor:not-allowed;}
+  .row{display:flex; align-items:center; gap:10px;}
+  .spacer{flex:1;}
+  .barmeter{height:8px; background:#0b0f24; border:1px solid var(--border); border-radius:5px; overflow:hidden;}
+  .barmeter > span{display:block; height:100%; background:linear-gradient(90deg,var(--cyan),var(--gold));}
+  .pill{padding:4px 10px; border-radius:999px; background:var(--panel-2); border:1px solid var(--border); font-size:12px; color:var(--text-dim);}
+
+  /* ---------- SPLASH ---------- */
+  #screen-splash{align-items:center; justify-content:center; gap:10px;}
+  .logo-wrap{text-align:center; animation:fadeUp 1s ease both;}
+  .logo-title{font-size:clamp(34px,8vw,72px); background:linear-gradient(90deg,var(--gold),#fff6da,var(--cyan));
+    -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:0.04em;
+    text-shadow:0 0 40px rgba(245,196,81,0.25);}
+  .logo-sub{color:var(--text-dim); letter-spacing:0.3em; text-transform:uppercase; font-size:clamp(10px,1.6vw,13px); margin-top:6px;}
+  .logo-badge{width:74px;height:74px;margin:0 auto 6px; border-radius:18px;
+    background:linear-gradient(135deg,var(--gold),var(--red)); display:flex;align-items:center;justify-content:center;
+    font-size:34px; box-shadow:0 10px 40px rgba(245,196,81,0.3);}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+  #splashTap{margin-top:26px; color:var(--text-dim); font-size:13px; animation:blink 1.6s infinite;}
+  @keyframes blink{0%,100%{opacity:0.3;}50%{opacity:1;}}
+  #loadingNote{position:absolute; bottom:18px; font-size:11px; color:var(--text-dim);}
+
+  /* ---------- MENU ---------- */
+  #screen-menu{align-items:center; justify-content:center; gap:22px; padding:24px;}
+  .menu-card{width:min(380px,88vw); background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:22px; display:flex; flex-direction:column; gap:12px; box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+  .menu-title{text-align:center; margin-bottom:6px;}
+  .menu-title .logo-title{font-size:clamp(26px,6vw,34px);}
+  .currency-chip{position:absolute; top:16px; right:16px; background:var(--panel); border:1px solid var(--border);
+    padding:8px 14px; border-radius:999px; font-weight:700; color:var(--gold); font-size:14px;}
+
+  /* ---------- GENERIC SUBSCREEN HEADER ---------- */
+  .subheader{display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid var(--border);
+    background:rgba(10,13,28,0.5);}
+  .subheader h2{font-size:clamp(16px,2.4vw,22px);}
+  .subbody{flex:1; overflow-y:auto; padding:18px 20px 30px;}
+
+  /* ---------- GARAGE ---------- */
+  .car-tabs{display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:14px;}
+  .car-tab{flex:0 0 auto; padding:8px 14px; border-radius:999px; border:1px solid var(--border); background:var(--panel-2);
+    font-size:12px; font-weight:700; cursor:pointer; color:var(--text-dim); white-space:nowrap;}
+  .car-tab.active{background:linear-gradient(90deg,var(--gold),#c9932c); color:#1a1200; border:none;}
+  .car-tab.locked{opacity:0.55;}
+  .garage-grid{display:grid; grid-template-columns:minmax(220px,1.1fr) minmax(220px,0.9fr); gap:20px;}
+  @media (max-width:720px){ .garage-grid{grid-template-columns:1fr;} }
+  .car-preview{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px;
+    display:flex; flex-direction:column; align-items:center; gap:10px;}
+  .stat-row{display:grid; grid-template-columns:90px 1fr 26px; gap:8px; align-items:center; font-size:12px; color:var(--text-dim);}
+  .stats-panel{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px;
+    display:flex; flex-direction:column; gap:10px;}
+  .upgrade-row{display:grid; grid-template-columns:90px 1fr 26px 76px; gap:8px; align-items:center; font-size:12px;}
+  .dot-track{display:flex; gap:3px;}
+  .dot{width:14px;height:6px;border-radius:3px; background:#232a52;}
+  .dot.filled{background:linear-gradient(90deg,var(--cyan),var(--gold));}
+
+  /* ---------- MAP / LEVEL SELECT ---------- */
+  .map-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;}
+  .map-card{position:relative; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border);
+    height:150px; cursor:pointer; display:flex; align-items:flex-end; padding:14px; transition:transform .15s;}
+  .map-card:hover{transform:translateY(-3px);}
+  .map-card.locked{cursor:not-allowed; filter:grayscale(0.7) brightness(0.5);}
+  .map-card .mc-title{font-size:18px; font-weight:800; text-shadow:0 2px 10px rgba(0,0,0,0.6);}
+  .map-card .mc-sub{font-size:11px; color:#fff; opacity:0.85;}
+  .lock-icon{position:absolute; top:10px; right:10px; font-size:18px;}
+  .level-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:14px;}
+  .level-card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; text-align:center;
+    cursor:pointer;}
+  .level-card.locked{opacity:0.4; cursor:not-allowed;}
+  .level-num{font-size:22px; font-weight:800;}
+  .stars{font-size:14px; letter-spacing:2px; color:#3a416e; margin-top:4px;}
+  .stars .on{color:var(--gold);}
+
+  /* ---------- STORY ---------- */
+  #screen-story{align-items:center; justify-content:center; padding:26px;}
+  .story-box{max-width:560px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:26px; display:flex; flex-direction:column; gap:14px;}
+  .story-chapter{color:var(--gold); font-size:13px; letter-spacing:0.15em; text-transform:uppercase;}
+  .story-text{line-height:1.7; font-size:clamp(14px,1.8vw,16px); color:#dbe1ff;}
+  .story-speaker{font-weight:800; color:var(--cyan); font-size:13px; letter-spacing:0.06em;}
+
+  /* ---------- GAME SCREEN ---------- */
+  #screen-game{background:#000;}
+  #gameCanvasWrap{position:relative; flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  canvas#game{display:block; touch-action:none;}
+  #hud{position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-start;
+    padding:12px 14px; pointer-events:none;}
+  .hud-panel{background:rgba(8,11,26,0.72); border:1px solid var(--border); border-radius:10px; padding:8px 12px;
+    backdrop-filter:blur(3px); pointer-events:auto;}
+  .hud-label{font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim);}
+  .hud-value{font-size:16px; font-weight:800;}
+  #healthBarOuter{width:130px; height:9px; background:#160b0e; border:1px solid var(--border); border-radius:5px; overflow:hidden; margin-top:4px;}
+  #healthBarInner{height:100%; width:100%; background:linear-gradient(90deg,var(--green),#8ee6a8); transition:width .2s;}
+  #nitroBarOuter{width:80px;height:7px;background:#0b0f24;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-top:4px;}
+  #nitroBarInner{height:100%;width:0%; background:linear-gradient(90deg,var(--cyan),#fff);}
+  #objectiveBar{position:absolute; top:12px; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none;}
+  #pauseBtn{position:absolute; top:12px; right:12px; pointer-events:auto;}
+  #pauseBtn button{width:38px;height:38px;border-radius:9px; font-size:16px;}
+
+  #touchControls{position:absolute; bottom:0; left:0; right:0; display:none; justify-content:space-between;
+    padding:16px; pointer-events:none;}
+  #touchControls.visible{display:flex;}
+  .touch-cluster{display:flex; gap:10px; pointer-events:auto;}
+  .touch-btn{width:64px;height:64px; border-radius:50%; background:rgba(20,26,54,0.75); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-size:26px; color:var(--text); backdrop-filter:blur(2px);}
+  .touch-btn.active{background:rgba(79,209,255,0.35); border-color:var(--cyan);}
+  .touch-btn.brake.active{background:rgba(255,95,109,0.35); border-color:var(--red);}
+  #nitroBtn{position:absolute; bottom:100px; right:16px; pointer-events:auto; width:56px;height:56px;border-radius:50%;
+    background:rgba(79,209,255,0.18); border:1px solid var(--cyan); color:var(--cyan); font-size:11px; font-weight:800;}
+
+  /* ---------- OVERLAYS: pause / results ---------- */
+  .modal-overlay{position:absolute; inset:0; background:rgba(3,5,14,0.88); display:none; align-items:center; justify-content:center;
+    flex-direction:column; gap:14px; z-index:20; text-align:center; padding:20px;}
+  .modal-overlay.active{display:flex;}
+  .modal-box{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:28px;
+    width:min(360px,90vw); display:flex; flex-direction:column; gap:12px;}
+  .results-stars{font-size:38px; letter-spacing:8px; color:#2a3160;}
+  .results-stars .on{color:var(--gold); text-shadow:0 0 14px rgba(245,196,81,0.6);}
+  .stat-line{display:flex; justify-content:space-between; font-size:13px; color:var(--text-dim); padding:4px 0;
+    border-bottom:1px dashed var(--border);}
+  .stat-line b{color:var(--text);}
+
+  /* ---------- SETTINGS ---------- */
+  .settings-row{display:flex; flex-direction:column; gap:6px; margin-bottom:18px;}
+  input[type=range]{width:100%; accent-color:var(--cyan);}
+
+  .controls-legend{display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--text-dim); padding:10px 16px;}
+  kbd{background:#111a30; border:1px solid #2c3a5c; border-radius:4px; padding:2px 6px; color:var(--text); font-size:11px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SPLASH -->
+  <div class="screen active" id="screen-splash">
+    <div class="logo-wrap">
+      <div class="logo-badge">🚗</div>
+      <div class="logo-title">LIBERTY DRIVE</div>
+      <div class="logo-sub">An Open Road Adventure</div>
+    </div>
+    <div id="splashTap">Tap or press Enter to continue</div>
+    <div id="loadingNote"></div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div class="screen" id="screen-menu">
+    <div class="currency-chip">🪙 <span id="menuCoins">0</span></div>
+    <div class="menu-title">
+      <div class="logo-title">LIBERTY DRIVE</div>
+      <div class="eyebrow">Chapter <span id="menuChapter">1</span> · <span id="menuChapterName">The Beginning</span></div>
+    </div>
+    <div class="menu-card">
+      <button class="btn primary" id="btnPlay">▶ Continue Journey</button>
+      <button class="btn accent" id="btnGarage">🔧 Garage</button>
+      <button class="btn ghost" id="btnMaps">🗺 Maps &amp; Levels</button>
+      <button class="btn ghost" id="btnSettings">⚙ Settings</button>
+    </div>
+  </div>
+
+  <!-- GARAGE -->
+  <div class="screen" id="screen-garage">
+    <div class="subheader">
+      <button class="btn ghost" data-back="screen-menu">← Back</button>
+      <h2>Garage</h2>
+      <div class="spacer"></div>
+      <div class="pill">🪙 <span id="garageCoins">0</span></div>
+    </div>
+    <div class="subbody">
+      <div class="car-tabs" id="carTabs"></div>
+      <div class="garage-grid">
+        <div class="car-preview">
+          <canvas id="carPreviewCanvas" width="220" height="220"></canvas>
+          <h3 id="carName">—</h3>
+          <div class="eyebrow" id="carTagline">—</div>
+          <button class="btn primary" id="btnSelectCar">Select Car</button>
+          <button class="btn accent" id="btnUnlockCar" style="display:none;">Unlock — 🪙 <span id="unlockCost">0</span></button>
+        </div>
+        <div class="stats-panel">
+          <div class="eyebrow">Performance</div>
+          <div id="statRows"></div>
+          <div class="eyebrow" style="margin-top:10px;">Upgrades</div>
+          <div id="upgradeRows"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP SELECT -->
+  <div class="screen" id="screen-maps">
+    <div class="subheader">
+      <button class="btn ghost" data-back="screen-menu">← Back</button>
+      <h2>Choose a Route</h2>
+    </div>
+    <div class="subbody">
+      <div class="map-grid" id="mapGrid"></div>
+    </div>
+  </div>
+
+  <!-- LEVEL SELECT -->
+  <div class="screen" id="screen-levels">
+    <div class="subheader">
+      <button class="btn ghost" data-back="screen-maps">← Back</button>
+      <h2 id="levelsMapTitle">Route</h2>
+    </div>
+    <div class="subbody">
+      <div class="level-grid" id="levelGrid"></div>
+    </div>
+  </div>
+
+  <!-- STORY -->
+  <div class="screen" id="screen-story">
+    <div class="story-box">
+      <div class="story-chapter" id="storyChapter">Chapter 1 — The Beginning</div>
+      <div class="story-speaker" id="storySpeaker">—</div>
+      <div class="story-text" id="storyText">—</div>
+      <div class="row">
+        <div class="spacer"></div>
+        <button class="btn primary" id="btnStoryContinue">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div class="screen" id="screen-game">
+    <div id="gameCanvasWrap">
+      <canvas id="game" width="480" height="800"></canvas>
+      <div id="hud">
+        <div class="hud-panel">
+          <div class="hud-label">Health</div>
+          <div id="healthBarOuter"><div id="healthBarInner"></div></div>
+          <div class="hud-label" style="margin-top:6px;">Nitro</div>
+          <div id="nitroBarOuter"><div id="nitroBarInner"></div></div>
+        </div>
+        <div class="hud-panel" style="text-align:right;">
+          <div class="hud-label">Speed</div>
+          <div class="hud-value" id="hudSpeed">0</div>
+          <div class="hud-label" style="margin-top:6px;">🪙 <span id="hudCoins">0</span></div>
+        </div>
+      </div>
+      <div id="objectiveBar" class="hud-panel">
+        <div class="hud-label">Objective</div>
+        <div id="objectiveText" style="font-size:12px; font-weight:700;">Reach the finish line</div>
+      </div>
+      <div id="pauseBtn"><button class="btn ghost">⏸</button></div>
+
+      <div id="touchControls">
+        <div class="touch-cluster">
+          <div class="touch-btn" id="touchLeft">◀</div>
+          <div class="touch-btn" id="touchRight">▶</div>
+        </div>
+        <div class="touch-cluster">
+          <div class="touch-btn brake" id="touchBrake">▼</div>
+          <div class="touch-btn" id="touchUp">▲</div>
+        </div>
+      </div>
+      <button id="nitroBtn">NITRO</button>
+
+      <!-- PAUSE MODAL -->
+      <div class="modal-overlay" id="modalPause">
+        <div class="modal-box">
+          <h2>Paused</h2>
+          <button class="btn primary" id="btnResume">Resume</button>
+          <button class="btn ghost" id="btnRestartLevel">Restart Level</button>
+          <button class="btn ghost" id="btnPauseSettings">Settings</button>
+          <button class="btn ghost" id="btnPauseMenu">Main Menu</button>
+        </div>
+      </div>
+
+      <!-- RESULTS MODAL -->
+      <div class="modal-overlay" id="modalResults">
+        <div class="modal-box">
+          <h2 id="resultsTitle">Level Complete</h2>
+          <div class="results-stars" id="resultsStars">★★★</div>
+          <div>
+            <div class="stat-line"><span>Coins collected</span><b id="resCoins">0</b></div>
+            <div class="stat-line"><span>Health remaining</span><b id="resHealth">0%</b></div>
+            <div class="stat-line"><span>Reward</span><b id="resReward">0 🪙</b></div>
+          </div>
+          <button class="btn primary" id="btnNextLevel">Next Level →</button>
+          <button class="btn ghost" id="btnRetryLevel">Retry</button>
+          <button class="btn ghost" id="btnResultsMenu">Main Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="subheader">
+      <button class="btn ghost" id="btnSettingsBack">← Back</button>
+      <h2>Settings</h2>
+    </div>
+    <div class="subbody">
+      <div class="settings-row">
+        <div class="eyebrow">Music Volume</div>
+        <input type="range" id="musicVol" min="0" max="100" value="60">
+      </div>
+      <div class="settings-row">
+        <div class="eyebrow">Sound Effects Volume</div>
+        <input type="range" id="sfxVol" min="0" max="100" value="80">
+      </div>
+      <div class="controls-legend">
+        <span><kbd>↑</kbd> Accelerate</span>
+        <span><kbd>↓</kbd> Brake / Reverse</span>
+        <span><kbd>←</kbd><kbd>→</kbd> Steer</span>
+        <span><kbd>Space</kbd> Nitro</span>
+        <span><kbd>Esc</kbd> Pause</span>
+        <span><kbd>Enter</kbd> Confirm</span>
+      </div>
+      <button class="btn ghost" id="btnResetProgress" style="margin-top:20px; border-color:var(--red); color:var(--red);">Reset All Progress</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   SAVE SYSTEM
+   ========================================================= */
+const SaveSystem = (function(){
+  const KEY = 'liberty-drive-save-v1';
+  const defaults = {
+    coins: 300,
+    unlockedCars: ['starter'],
+    selectedCar: 'starter',
+    upgrades: {}, // carId -> {speed:0,accel:0,handling:0,braking:0,durability:0}
+    levelStars: {}, // levelId -> stars (0-3)
+    levelBest: {},  // levelId -> best coins
+    unlockedLevel: 0, // highest index playable
+    settings: { musicVol: 60, sfxVol: 80 },
+  };
+  let data = null;
+
+  async function load(){
+    try{
+      const res = await window.storage.get(KEY, false);
+      if(res && res.value){
+        const parsed = JSON.parse(res.value);
+        data = Object.assign({}, defaults, parsed);
+        data.settings = Object.assign({}, defaults.settings, parsed.settings||{});
+      } else {
+        data = JSON.parse(JSON.stringify(defaults));
+      }
+    } catch(e){
+      data = JSON.parse(JSON.stringify(defaults));
+    }
+    return data;
+  }
+  async function save(){
+    try{
+      await window.storage.set(KEY, JSON.stringify(data), false);
+    } catch(e){ /* silent fail; keep playing with in-memory state */ }
+  }
+  function get(){ return data; }
+  async function reset(){
+    data = JSON.parse(JSON.stringify(defaults));
+    await save();
+    return data;
+  }
+  return { load, save, get, reset };
+})();
+
+/* =========================================================
+   AUDIO MANAGER (synthesized, no external assets needed)
+   ========================================================= */
+const AudioManager = (function(){
+  let ctx = null;
+  let engineOsc = null, engineGain = null;
+  let musicGain, sfxGain;
+  function ensureCtx(){
+    if(!ctx){
+      ctx = new (window.AudioContext||window.webkitAudioContext)();
+      musicGain = ctx.createGain();
+      sfxGain = ctx.createGain();
+      musicGain.connect(ctx.destination);
+      sfxGain.connect(ctx.destination);
+      setVolumes(SaveSystem.get()?.settings || {musicVol:60,sfxVol:80});
+    }
+    if(ctx.state === 'suspended') ctx.resume();
+  }
+  function setVolumes(s){
+    if(!ctx) return;
+    musicGain.gain.value = (s.musicVol/100) * 0.15;
+    sfxGain.gain.value = (s.sfxVol/100) * 0.5;
+  }
+  function blip(freq, dur, type){
+    ensureCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type||'square';
+    o.frequency.value = freq;
+    g.gain.value = 0.001;
+    o.connect(g); g.connect(sfxGain);
+    const t = ctx.currentTime;
+    g.gain.setValueAtTime(0.001,t);
+    g.gain.exponentialRampToValueAtTime(1, t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+    o.start(t); o.stop(t+dur+0.02);
+  }
+  function coin(){ blip(880,0.12,'square'); setTimeout(()=>blip(1320,0.1,'square'),40); }
+  function crash(){
+    ensureCtx();
+    const bufferSize = ctx.sampleRate*0.25;
+    const buffer = ctx.createBuffer(1,bufferSize,ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1)*(1-i/bufferSize);
+    const src = ctx.createBufferSource(); src.buffer = buffer;
+    const g = ctx.createGain(); g.gain.value = 0.6;
+    src.connect(g); g.connect(sfxGain);
+    src.start();
+  }
+  function click(){ blip(520,0.06,'triangle'); }
+  function nitro(){ blip(220,0.3,'sawtooth'); }
+  function win(){ blip(660,0.15,'sine'); setTimeout(()=>blip(880,0.15,'sine'),120); setTimeout(()=>blip(1100,0.25,'sine'),260); }
+  function fail(){ blip(180,0.35,'sawtooth'); }
+
+  function startEngine(){
+    ensureCtx();
+    if(engineOsc) return;
+    engineOsc = ctx.createOscillator();
+    engineGain = ctx.createGain();
+    engineOsc.type = 'sawtooth';
+    engineOsc.frequency.value = 60;
+    engineGain.gain.value = 0.0;
+    const filt = ctx.createBiquadFilter();
+    filt.type='lowpass'; filt.frequency.value=400;
+    engineOsc.connect(filt); filt.connect(engineGain); engineGain.connect(musicGain);
+    engineOsc.start();
+  }
+  function updateEngine(speedRatio){
+    if(!engineOsc) return;
+    engineOsc.frequency.value = 55 + speedRatio*140;
+    engineGain.gain.value = 0.6 + speedRatio*0.8;
+  }
+  function stopEngine(){
+    if(engineOsc){ try{engineOsc.stop();}catch(e){} engineOsc=null; }
+  }
+  return { ensureCtx, setVolumes, coin, crash, click, nitro, win, fail, startEngine, updateEngine, stopEngine };
+})();
+
+/* =========================================================
+   CAR DATA
+   ========================================================= */
+const CARS = [
+  { id:'starter', name:'Rustbucket Rookie', tagline:'Reliable, humble, yours from day one.',
+    unlockCost:0, color:'#9fb0d6', accent:'#5a6b9c',
+    base:{ speed:5, accel:6, handling:6, braking:6, durability:5 } },
+  { id:'sport', name:'Velocity GT', tagline:'Light frame, sharp turns, city-bred.',
+    unlockCost:900, color:'#e6404f', accent:'#7a1420',
+    base:{ speed:8, accel:7, handling:7, braking:6, durability:5 } },
+  { id:'muscle', name:'Ironclad V8', tagline:'Heavy, brutal, forgives your mistakes.',
+    unlockCost:1400, color:'#2a9d8f', accent:'#0f4b44',
+    base:{ speed:7, accel:6, handling:5, braking:5, durability:9 } },
+  { id:'super', name:'Phantom X1', tagline:'The legend from the coordinates. Unreasonably fast.',
+    unlockCost:2600, color:'#f4a300', accent:'#7a4e00',
+    base:{ speed:10, accel:9, handling:8, braking:7, durability:6 } },
+];
+const STAT_KEYS = ['speed','accel','handling','braking','durability'];
+const STAT_LABELS = {speed:'Speed',accel:'Accel',handling:'Handling',braking:'Braking',durability:'Durability'};
+const MAX_UPGRADE = 3;
+
+function getCar(id){ return CARS.find(c=>c.id===id); }
+function upgradeLevel(carId, stat){
+  const s = SaveSystem.get();
+  return (s.upgrades[carId] && s.upgrades[carId][stat]) || 0;
+}
+function effectiveStat(carId, stat){
+  const car = getCar(carId);
+  return car.base[stat] + upgradeLevel(carId,stat)*0.6;
+}
+function upgradeCost(carId, stat){
+  const lvl = upgradeLevel(carId, stat);
+  const tierMult = 1 + CARS.findIndex(c=>c.id===carId)*0.35;
+  return Math.round((lvl+1) * 140 * tierMult);
+}
+
+/* =========================================================
+   MAP + LEVEL DATA
+   ========================================================= */
+const MAPS = [
+  { id:'city', name:'Downtown Circuit', chapter:'Chapter 1 — The Beginning',
+    grad:['#1a2238','#2b3a55'], road:'#2e3446', edge:'#f5c451', line:'#e8e8e8', accentGlow:'rgba(245,196,81,0.5)',
+    obstacleColor:'#ff7a45', trafficColor:'#5d7bd6' },
+  { id:'desert', name:'Dust Highway', chapter:'Chapter 2 — Into the Dust',
+    grad:['#3a2416','#8a5a3c'], road:'#5c4531', edge:'#ffcf6b', line:'#fff3d6', accentGlow:'rgba(255,207,107,0.5)',
+    obstacleColor:'#c1440e', trafficColor:'#d68a3c' },
+  { id:'night', name:'Neon Nightfall', chapter:'Chapter 3 — The Last Ride',
+    grad:['#050914','#1b1140'], road:'#1b1f2b', edge:'#4fd1ff', line:'#dbe9ff', accentGlow:'rgba(79,209,255,0.5)',
+    obstacleColor:'#ff5f6d', trafficColor:'#9d6bff' },
+];
+
+// 9 levels total, 3 per map/chapter. Difficulty scales with global index (0-8).
+const LEVELS = [];
+MAPS.forEach((map, mIdx)=>{
+  for(let i=0;i<3;i++){
+    const idx = mIdx*3+i;
+    LEVELS.push({
+      id: idx,
+      mapId: map.id,
+      indexInMap: i,
+      name: `${map.name} — Route ${i+1}`,
+      length: 1900 + idx*260,
+      roadWidth: 230 - idx*9,
+      barrierDensity: 0.55 + idx*0.09,
+      potholes: idx>=2,
+      traffic: idx>=3,
+      trafficCount: Math.max(0, Math.floor((idx-2))),
+      coinCount: 14 + idx*2,
+      coinTargetPct: 0.6,
+      nitroPickups: 2,
+      seed: 1000 + idx*77,
+    });
+  }
+});
+
+const STORY = {
+  intro: { speaker:'Unknown Caller', text:"Your uncle left you two things: an old car, and a set of coordinates hidden under the passenger seat. Someone else wants that car back. Drive." },
+  chapters: [
+    { title:'Chapter 1 — The Beginning', speaker:'You', text:"The city still smells like rain. First coordinate: three blocks east, past the old freight yard. Let's see what this rustbucket can do." },
+    { title:'Chapter 2 — Into the Dust', speaker:'Radio Static', text:"...if you're hearing this, they know about the car. Get off the highway before the sun's fully up. The desert doesn't forgive mistakes." },
+    { title:'Chapter 3 — The Last Ride', speaker:'You', text:"Neon signs, wet asphalt, and one last coordinate. Whatever your uncle was running from, it's waiting at the end of this road." },
+  ],
+  outro: { speaker:'Uncle (recording)', text:"If you're watching this, you made it further than I did. The car was never the point — it's just fast enough to outrun the truth for one more mile. Keep driving, kid." }
+};
+
+/* =========================================================
+   UI NAVIGATION
+   ========================================================= */
+const Nav = (function(){
+  let current = 'screen-splash';
+  function show(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    current = id;
+  }
+  function get(){ return current; }
+  return { show, get };
+})();
+
+document.querySelectorAll('[data-back]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ AudioManager.click(); Nav.show(btn.dataset.back); });
+});
+
+/* =========================================================
+   BOOT / SPLASH
+   ========================================================= */
+let booted = false;
+async function boot(){
+  if(booted) return;
+  booted = true;
+  document.getElementById('loadingNote').textContent = 'Loading saved progress…';
+  await SaveSystem.load();
+  document.getElementById('loadingNote').textContent = '';
+  syncSettingsUI();
+  goMenu();
+}
+function proceedFromSplash(){
+  AudioManager.ensureCtx();
+  AudioManager.click();
+  boot();
+}
+document.getElementById('screen-splash').addEventListener('click', proceedFromSplash);
+window.addEventListener('keydown', (e)=>{
+  if(Nav.get()==='screen-splash' && (e.key==='Enter'||e.key===' ')) proceedFromSplash();
+});
+
+/* =========================================================
+   MAIN MENU
+   ========================================================= */
+function refreshCurrencyChips(){
+  const s = SaveSystem.get();
+  document.getElementById('menuCoins').textContent = s.coins;
+  document.getElementById('garageCoins').textContent = s.coins;
+}
+function currentChapterInfo(){
+  const s = SaveSystem.get();
+  const lvl = Math.min(s.unlockedLevel, LEVELS.length-1);
+  const map = MAPS.find(m=>m.id===LEVELS[lvl].mapId);
+  const chapterNum = MAPS.findIndex(m=>m.id===map.id)+1;
+  return { chapterNum, mapName: map.name };
+}
+function goMenu(){
+  refreshCurrencyChips();
+  const info = currentChapterInfo();
+  document.getElementById('menuChapter').textContent = info.chapterNum;
+  document.getElementById('menuChapterName').textContent = info.mapName;
+  Nav.show('screen-menu');
+}
+document.getElementById('btnPlay').addEventListener('click', ()=>{
+  AudioManager.click();
+  const s = SaveSystem.get();
+  const lvlIdx = Math.min(s.unlockedLevel, LEVELS.length-1);
+  startLevelFlow(lvlIdx);
+});
+document.getElementById('btnGarage').addEventListener('click', ()=>{ AudioManager.click(); openGarage(); });
+document.getElementById('btnMaps').addEventListener('click', ()=>{ AudioManager.click(); openMapSelect(); });
+document.getElementById('btnSettings').addEventListener('click', ()=>{ AudioManager.click(); openSettings('screen-menu'); });
+
+/* =========================================================
+   GARAGE
+   ========================================================= */
+let garageSelectedTabId = null;
+function openGarage(){
+  const s = SaveSystem.get();
+  garageSelectedTabId = s.selectedCar;
+  renderCarTabs();
+  renderGarageDetail(garageSelectedTabId);
+  Nav.show('screen-garage');
+}
+function renderCarTabs(){
+  const s = SaveSystem.get();
+  const wrap = document.getElementById('carTabs');
+  wrap.innerHTML = '';
+  CARS.forEach(car=>{
+    const unlocked = s.unlockedCars.includes(car.id);
+    const tab = document.createElement('div');
+    tab.className = 'car-tab' + (car.id===garageSelectedTabId?' active':'') + (!unlocked?' locked':'');
+    tab.textContent = unlocked ? car.name : ('🔒 '+car.name);
+    tab.addEventListener('click', ()=>{
+      AudioManager.click();
+      garageSelectedTabId = car.id;
+      renderCarTabs();
+      renderGarageDetail(car.id);
+    });
+    wrap.appendChild(tab);
+  });
+}
+function drawCarOnCanvas(canvas, car){
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(canvas.width/2, canvas.height/2+20);
+  drawCarSprite(ctx, car, 70, 130, 0);
+  ctx.restore();
+}
+function renderGarageDetail(carId){
+  const s = SaveSystem.get();
+  const car = getCar(carId);
+  const unlocked = s.unlockedCars.includes(carId);
+  document.getElementById('carName').textContent = car.name;
+  document.getElementById('carTagline').textContent = car.tagline;
+  drawCarOnCanvas(document.getElementById('carPreviewCanvas'), car);
+
+  const selectBtn = document.getElementById('btnSelectCar');
+  const unlockBtn = document.getElementById('btnUnlockCar');
+  if(unlocked){
+    selectBtn.style.display = 'inline-block';
+    unlockBtn.style.display = 'none';
+    selectBtn.textContent = (s.selectedCar===carId) ? 'Selected ✓' : 'Select Car';
+    selectBtn.disabled = (s.selectedCar===carId);
+    selectBtn.onclick = async ()=>{
+      AudioManager.click();
+      s.selectedCar = carId;
+      await SaveSystem.save();
+      renderGarageDetail(carId);
+    };
+  } else {
+    selectBtn.style.display = 'none';
+    unlockBtn.style.display = 'inline-block';
+    document.getElementById('unlockCost').textContent = car.unlockCost;
+    unlockBtn.disabled = s.coins < car.unlockCost;
+    unlockBtn.onclick = async ()=>{
+      if(s.coins < car.unlockCost) return;
+      AudioManager.coin();
+      s.coins -= car.unlockCost;
+      s.unlockedCars.push(carId);
+      await SaveSystem.save();
+      refreshCurrencyChips();
+      renderCarTabs();
+      renderGarageDetail(carId);
+    };
+  }
+
+  // stat rows (base+upgrade combined, capped at 12 for bar display)
+  const statRows = document.getElementById('statRows');
+  statRows.innerHTML = '';
+  STAT_KEYS.forEach(stat=>{
+    const val = effectiveStat(carId, stat);
+    const pct = Math.min(100, (val/12)*100);
+    const row = document.createElement('div');
+    row.className = 'stat-row';
+    row.innerHTML = `<span>${STAT_LABELS[stat]}</span><div class="barmeter"><span style="width:${pct}%"></span></div><span>${val.toFixed(1)}</span>`;
+    statRows.appendChild(row);
+  });
+
+  // upgrade rows
+  const upRows = document.getElementById('upgradeRows');
+  upRows.innerHTML = '';
+  STAT_KEYS.forEach(stat=>{
+    const lvl = upgradeLevel(carId, stat);
+    const cost = upgradeCost(carId, stat);
+    const maxed = lvl>=MAX_UPGRADE;
+    const row = document.createElement('div');
+    row.className = 'upgrade-row';
+    const dots = Array.from({length:MAX_UPGRADE}).map((_,i)=>`<span class="dot ${i<lvl?'filled':''}"></span>`).join('');
+    row.innerHTML = `<span>${STAT_LABELS[stat]}</span><div class="dot-track">${dots}</div><span></span>`;
+    const btn = document.createElement('button');
+    btn.className = 'btn ghost';
+    btn.style.padding = '4px 8px';
+    btn.style.fontSize = '11px';
+    btn.textContent = maxed ? 'MAX' : `🪙${cost}`;
+    btn.disabled = maxed || !unlocked || s.coins < cost;
+    btn.onclick = async ()=>{
+      if(maxed || s.coins < cost || !unlocked) return;
+      AudioManager.coin();
+      s.coins -= cost;
+      s.upgrades[carId] = s.upgrades[carId] || {};
+      s.upgrades[carId][stat] = (s.upgrades[carId][stat]||0)+1;
+      await SaveSystem.save();
+      refreshCurrencyChips();
+      renderGarageDetail(carId);
+    };
+    row.appendChild(btn);
+    upRows.appendChild(row);
+  });
+}
+
+/* =========================================================
+   MAP / LEVEL SELECT
+   ========================================================= */
+function openMapSelect(){
+  const s = SaveSystem.get();
+  const grid = document.getElementById('mapGrid');
+  grid.innerHTML = '';
+  MAPS.forEach((map, mIdx)=>{
+    const firstLevelOfMap = mIdx*3;
+    const unlocked = s.unlockedLevel >= firstLevelOfMap;
+    const card = document.createElement('div');
+    card.className = 'map-card' + (unlocked?'':' locked');
+    card.style.background = `linear-gradient(160deg, ${map.grad[0]}, ${map.grad[1]})`;
+    card.innerHTML = `${unlocked?'':'<div class="lock-icon">🔒</div>'}
+      <div><div class="mc-title" style="color:#fff;">${map.name}</div>
+      <div class="mc-sub">${map.chapter}</div></div>`;
+    card.addEventListener('click', ()=>{
+      if(!unlocked) return;
+      AudioManager.click();
+      openLevelSelect(map.id);
+    });
+    grid.appendChild(card);
+  });
+  Nav.show('screen-maps');
+}
+function openLevelSelect(mapId){
+  const s = SaveSystem.get();
+  const map = MAPS.find(m=>m.id===mapId);
+  document.getElementById('levelsMapTitle').textContent = map.name;
+  const grid = document.getElementById('levelGrid');
+  grid.innerHTML = '';
+  LEVELS.filter(l=>l.mapId===mapId).forEach(level=>{
+    const unlocked = s.unlockedLevel >= level.id;
+    const stars = s.levelStars[level.id] || 0;
+    const card = document.createElement('div');
+    card.className = 'level-card' + (unlocked?'':' locked');
+    const starStr = [0,1,2].map(i=>`<span class="${i<stars?'on':''}">★</span>`).join('');
+    card.innerHTML = `<div class="level-num">${level.indexInMap+1}</div>
+      <div class="stars">${unlocked?starStr:'🔒'}</div>`;
+    card.addEventListener('click', ()=>{
+      if(!unlocked) return;
+      AudioManager.click();
+      startLevelFlow(level.id);
+    });
+    grid.appendChild(card);
+  });
+  Nav.show('screen-levels');
+}
+
+/* =========================================================
+   STORY FLOW
+   ========================================================= */
+function startLevelFlow(levelId){
+  const level = LEVELS[levelId];
+  // show chapter intro story only at the very first level of a chapter, and only once (first time reaching it)
+  const s = SaveSystem.get();
+  const isFirstOfChapter = level.indexInMap===0;
+  const neverSeenBefore = s.unlockedLevel === levelId; // just unlocked, first visit
+  if(isFirstOfChapter){
+    const chapterIdx = MAPS.findIndex(m=>m.id===level.mapId);
+    showStory(STORY.chapters[chapterIdx], ()=> launchLevel(levelId));
+  } else {
+    launchLevel(levelId);
+  }
+}
+function showStory(entry, onContinue){
+  document.getElementById('storyChapter').textContent = entry.title || '';
+  document.getElementById('storySpeaker').textContent = entry.speaker;
+  document.getElementById('storyText').textContent = entry.text;
+  Nav.show('screen-story');
+  const btn = document.getElementById('btnStoryContinue');
+  btn.onclick = ()=>{ AudioManager.click(); onContinue(); };
+}
+
+/* =========================================================
+   GAMEPLAY ENGINE
+   ========================================================= */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W = 480, H = 800;
+
+function fitCanvas(){
+  const wrap = document.getElementById('gameCanvasWrap');
+  const rect = wrap.getBoundingClientRect();
+  const targetRatio = 480/800;
+  let w = rect.width, h = rect.height;
+  if(w/h > targetRatio){ w = h*targetRatio; } else { h = w/targetRatio; }
+  canvas.style.width = w+'px';
+  canvas.style.height = h+'px';
+  const dpr = Math.min(2, window.devicePixelRatio||1);
+  canvas.width = Math.round(480*dpr);
+  canvas.height = Math.round(800*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  W = 480; H = 800;
+}
+window.addEventListener('resize', fitCanvas);
+
+// ---- seeded RNG ----
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+let RunState = null; // active run object
+
+function buildTrack(level){
+  const SEG_LEN = 20;
+  const numSegs = Math.ceil(level.length/SEG_LEN)+40;
+  const rand = mulberry32(level.seed);
+  const track = [];
+  let phase = 0;
+  for(let i=0;i<numSegs;i++){
+    phase += 0.03 + rand()*0.015;
+    let wobble = Math.sin(phase*1.7)*50 + Math.sin(phase*0.55)*32;
+    if(i%130===0 && i>20) wobble += (rand()-0.5)*130;
+    const widthMod = Math.sin(i*0.02)*22;
+    track.push({ centerX: wobble, width: Math.max(120, level.roadWidth + widthMod) });
+  }
+  return { track, SEG_LEN, numSegs };
+}
+
+function buildEntities(level, trackData){
+  const rand = mulberry32(level.seed+999);
+  const { track, SEG_LEN, numSegs } = trackData;
+  const barriers = [], coins = [], traffic = [], nitroPickups = [];
+
+  let i = 50;
+  while(i < numSegs-30){
+    const seg = track[i];
+    const roadHalf = seg.width/2 - 24;
+    if(rand() < level.barrierDensity){
+      const gapCenter = (rand()-0.5)*roadHalf*1.5;
+      const count = 1+Math.floor(rand()*2);
+      for(let c=0;c<count;c++){
+        let offset, tries=0;
+        do{ offset=(rand()-0.5)*roadHalf*2; tries++; } while(Math.abs(offset-gapCenter)<65 && tries<10);
+        barriers.push({ segIndex:i, offsetX:offset, type: (level.potholes && rand()<0.3) ? 'pothole':'pylon' });
+      }
+    }
+    i += 12+Math.floor(rand()*12);
+  }
+
+  // coins: scattered near center-ish, avoiding exact barrier spots loosely
+  let ci = 40;
+  let coinsPlaced = 0;
+  while(ci < numSegs-20 && coinsPlaced < level.coinCount){
+    if(rand() < 0.5){
+      const seg = track[ci];
+      const roadHalf = seg.width/2 - 20;
+      const offset = (rand()-0.5)*roadHalf*1.3;
+      coins.push({ segIndex:ci, offsetX:offset, collected:false });
+      coinsPlaced++;
+    }
+    ci += 6+Math.floor(rand()*6);
+  }
+
+  // nitro pickups
+  for(let n=0;n<level.nitroPickups;n++){
+    const segI = 80 + Math.floor(rand()*(numSegs-160));
+    const seg = track[segI];
+    const roadHalf = seg.width/2-20;
+    nitroPickups.push({ segIndex:segI, offsetX:(rand()-0.5)*roadHalf, collected:false });
+  }
+
+  // traffic
+  if(level.traffic){
+    for(let t=0;t<level.trafficCount;t++){
+      const segI = 100 + Math.floor(rand()*(numSegs-200));
+      const seg = track[segI];
+      const roadHalf = seg.width/2-24;
+      traffic.push({
+        segIndex: segI,
+        baseSeg: segI,
+        offsetX: (rand()-0.5)*roadHalf,
+        dir: rand()<0.5?-1:1,
+        speed: 1.2 + rand()*1.4,
+        driftT: rand()*Math.PI*2
+      });
+    }
+  }
+
+  return { barriers, coins, traffic, nitroPickups };
+}
+
+function launchLevel(levelId){
+  const level = LEVELS[levelId];
+  const map = MAPS.find(m=>m.id===level.mapId);
+  const s = SaveSystem.get();
+  const car = getCar(s.selectedCar);
+
+  const trackData = buildTrack(level);
+  const entities = buildEntities(level, trackData);
+
+  const maxHealth = 55 + effectiveStat(car.id,'durability')*9;
+  RunState = {
+    level, map, car,
+    track: trackData.track, SEG_LEN: trackData.SEG_LEN,
+    barriers: entities.barriers, coins: entities.coins, traffic: entities.traffic, nitro: entities.nitroPickups,
+    carX: 0, distance: 0, speed: 0,
+    maxHealth, health: maxHealth,
+    coinsCollected: 0,
+    nitroMeter: 30, nitroActive: 0,
+    shake: 0, flash: 0,
+    running: true, ended: false,
+    stat: {
+      speed: effectiveStat(car.id,'speed'),
+      accel: effectiveStat(car.id,'accel')/130,
+      handling: effectiveStat(car.id,'handling'),
+      braking: effectiveStat(car.id,'braking')/70,
+      durability: effectiveStat(car.id,'durability'),
+    }
+  };
+  RunState.maxSpeedVal = 4.2 + RunState.stat.speed*0.42;
+
+  document.getElementById('objectiveText').textContent =
+    `Reach the finish · collect ${Math.ceil(level.coinCount*level.coinTargetPct)}+ coins for 3★`;
+  document.getElementById('modalPause').classList.remove('active');
+  document.getElementById('modalResults').classList.remove('active');
+  Nav.show('screen-game');
+  fitCanvas();
+  updateTouchControlsVisibility();
+  AudioManager.startEngine();
+  lastFrameTime = performance.now();
+}
+
+/* ---- input ---- */
+const keys = { left:false, right:false, up:false, down:false, nitro:false };
+window.addEventListener('keydown', e=>{
+  if(Nav.get()!=='screen-game') {
+    if(e.key==='Escape' && Nav.get()==='screen-game'){}
+    return;
+  }
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+  if(e.key==='ArrowLeft') keys.left=true;
+  if(e.key==='ArrowRight') keys.right=true;
+  if(e.key==='ArrowUp') keys.up=true;
+  if(e.key==='ArrowDown') keys.down=true;
+  if(e.key===' ') keys.nitro=true;
+  if(e.key==='Escape') togglePause();
+});
+window.addEventListener('keyup', e=>{
+  if(e.key==='ArrowLeft') keys.left=false;
+  if(e.key==='ArrowRight') keys.right=false;
+  if(e.key==='ArrowUp') keys.up=false;
+  if(e.key==='ArrowDown') keys.down=false;
+  if(e.key===' ') keys.nitro=false;
+});
+
+function bindTouchBtn(el, onDown, onUp){
+  el.addEventListener('touchstart', e=>{ e.preventDefault(); el.classList.add('active'); onDown(); }, {passive:false});
+  el.addEventListener('touchend', e=>{ e.preventDefault(); el.classList.remove('active'); onUp(); }, {passive:false});
+  el.addEventListener('mousedown', e=>{ el.classList.add('active'); onDown(); });
+  el.addEventListener('mouseup', e=>{ el.classList.remove('active'); onUp(); });
+  el.addEventListener('mouseleave', e=>{ el.classList.remove('active'); onUp(); });
+}
+bindTouchBtn(document.getElementById('touchLeft'), ()=>keys.left=true, ()=>keys.left=false);
+bindTouchBtn(document.getElementById('touchRight'), ()=>keys.right=true, ()=>keys.right=false);
+bindTouchBtn(document.getElementById('touchUp'), ()=>keys.up=true, ()=>keys.up=false);
+bindTouchBtn(document.getElementById('touchBrake'), ()=>keys.down=true, ()=>keys.down=false);
+bindTouchBtn(document.getElementById('nitroBtn'), ()=>keys.nitro=true, ()=>keys.nitro=false);
+
+function updateTouchControlsVisibility(){
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints>0 || window.innerWidth<820;
+  document.getElementById('touchControls').classList.toggle('visible', isTouch);
+}
+
+/* ---- pause ---- */
+function togglePause(){
+  if(Nav.get()!=='screen-game' || !RunState || RunState.ended) return;
+  RunState.running = !RunState.running;
+  document.getElementById('modalPause').classList.toggle('active', !RunState.running);
+  if(!RunState.running) AudioManager.updateEngine(0);
+}
+document.getElementById('pauseBtn').addEventListener('click', ()=>{ AudioManager.click(); togglePause(); });
+document.getElementById('btnResume').addEventListener('click', ()=>{ AudioManager.click(); togglePause(); });
+document.getElementById('btnRestartLevel').addEventListener('click', ()=>{
+  AudioManager.click();
+  document.getElementById('modalPause').classList.remove('active');
+  launchLevel(RunState.level.id);
+});
+document.getElementById('btnPauseSettings').addEventListener('click', ()=>{ AudioManager.click(); openSettings('screen-game'); });
+document.getElementById('btnPauseMenu').addEventListener('click', ()=>{
+  AudioManager.click();
+  AudioManager.stopEngine();
+  document.getElementById('modalPause').classList.remove('active');
+  goMenu();
+});
+
+/* ---- core update ---- */
+function segAt(idx){ idx=Math.max(0,Math.min(RunState.track.length-1,idx)); return RunState.track[idx]; }
+function roadAtDistance(dist){
+  const idx = dist/RunState.SEG_LEN;
+  const i0 = Math.floor(idx), i1=Math.min(RunState.track.length-1,i0+1);
+  const t = idx-i0;
+  const a=segAt(i0), b=segAt(i1);
+  return { centerX: a.centerX+(b.centerX-a.centerX)*t, width: a.width+(b.width-a.width)*t };
+}
+
+function endLevel(success){
+  if(RunState.ended) return;
+  RunState.ended = true;
+  RunState.running = false;
+  AudioManager.stopEngine();
+  const s = SaveSystem.get();
+  const level = RunState.level;
+  const healthPct = RunState.health/RunState.maxHealth;
+  const coinTarget = Math.ceil(level.coinCount*level.coinTargetPct);
+  let stars = 0;
+  if(success){
+    stars = 1;
+    if(healthPct>=0.5) stars = 2;
+    if(healthPct>=0.5 && RunState.coinsCollected>=coinTarget) stars = 3;
+  }
+  const reward = success ? (RunState.coinsCollected*8 + (level.id+1)*40) : Math.floor(RunState.coinsCollected*4);
+
+  if(success){
+    AudioManager.win();
+    s.coins += reward;
+    s.levelStars[level.id] = Math.max(s.levelStars[level.id]||0, stars);
+    s.levelBest[level.id] = Math.max(s.levelBest[level.id]||0, RunState.coinsCollected);
+    if(s.unlockedLevel <= level.id){
+      s.unlockedLevel = Math.min(LEVELS.length-1, level.id+1);
+    }
+  } else {
+    AudioManager.fail();
+    s.coins += reward;
+  }
+  SaveSystem.save();
+
+  document.getElementById('resultsTitle').textContent = success ? 'Route Cleared' : 'Car Disabled';
+  const starEls = [0,1,2].map(i=>`<span class="${i<stars?'on':''}">★</span>`).join('');
+  document.getElementById('resultsStars').innerHTML = starEls;
+  document.getElementById('resCoins').textContent = RunState.coinsCollected;
+  document.getElementById('resHealth').textContent = Math.round(healthPct*100)+'%';
+  document.getElementById('resReward').textContent = reward+' 🪙';
+
+  const nextBtn = document.getElementById('btnNextLevel');
+  const isLastLevel = level.id === LEVELS.length-1;
+  nextBtn.style.display = (success && !isLastLevel) ? 'inline-block':'none';
+  nextBtn.onclick = ()=>{
+    AudioManager.click();
+    document.getElementById('modalResults').classList.remove('active');
+    if(isLastLevel){ goMenu(); return; }
+    const nextId = level.id+1;
+    if(LEVELS[nextId].indexInMap===0){
+      const chapterIdx = MAPS.findIndex(m=>m.id===LEVELS[nextId].mapId);
+      showStory(STORY.chapters[chapterIdx], ()=>launchLevel(nextId));
+    } else {
+      launchLevel(nextId);
+    }
+  };
+  if(success && isLastLevel){
+    setTimeout(()=>{ showStory(Object.assign({title:'Epilogue'},STORY.outro), goMenu); }, 250);
+  }
+
+  document.getElementById('modalResults').classList.add('active');
+}
+document.getElementById('btnRetryLevel').addEventListener('click', ()=>{
+  AudioManager.click();
+  document.getElementById('modalResults').classList.remove('active');
+  launchLevel(RunState.level.id);
+});
+document.getElementById('btnResultsMenu').addEventListener('click', ()=>{
+  AudioManager.click();
+  document.getElementById('modalResults').classList.remove('active');
+  goMenu();
+});
+
+function update(dt){
+  const rs = RunState;
+  if(!rs || !rs.running || rs.ended) return;
+
+  const steerPower = (2.6 + rs.stat.handling*0.35) * (0.35 + rs.speed/rs.maxSpeedVal);
+  if(keys.left) rs.carX -= steerPower*dt;
+  if(keys.right) rs.carX += steerPower*dt;
+
+  const nitroActive = keys.nitro && rs.nitroMeter>0;
+  if(nitroActive){
+    rs.nitroMeter = Math.max(0, rs.nitroMeter-0.9*dt);
+    rs.nitroActive = 8;
+  } else if(rs.nitroActive>0){ rs.nitroActive -= dt; }
+  if(!keys.nitro) rs.nitroMeter = Math.min(100, rs.nitroMeter + 0.08*dt);
+
+  const targetMax = rs.maxSpeedVal * (nitroActive ? 1.55 : 1);
+  if(keys.up) rs.speed += rs.stat.accel*dt*3.4;
+  else rs.speed -= 0.035*dt*3.4;
+  if(keys.down) rs.speed -= (rs.stat.braking*dt*3.4 + 0.05);
+  rs.speed = Math.max(0, Math.min(targetMax, rs.speed));
+
+  rs.distance += rs.speed*18*dt;
+
+  const road = roadAtDistance(rs.distance);
+  const half = road.width/2 - 17;
+  const rel = rs.carX - road.centerX;
+  if(rel>half){ rs.carX=road.centerX+half; rs.speed*=0.82; rs.shake=6; }
+  if(rel<-half){ rs.carX=road.centerX-half; rs.speed*=0.82; rs.shake=6; }
+
+  // traffic movement
+  rs.traffic.forEach(t=>{
+    t.driftT += dt*0.03;
+    t.segIndex = t.baseSeg + Math.sin(t.driftT)*8*t.dir;
+  });
+
+  const curIdx = Math.floor(rs.distance/rs.SEG_LEN);
+
+  // barrier collisions
+  for(const b of rs.barriers){
+    if(b.hit) continue;
+    if(Math.abs(b.segIndex-curIdx)>3) continue;
+    const seg = segAt(b.segIndex);
+    const bx = seg.centerX + b.offsetX;
+    const bd = b.segIndex*rs.SEG_LEN;
+    if(Math.abs(bd-rs.distance)<20 && Math.abs(rs.carX-bx)<30){
+      const dmg = (b.type==='pothole') ? 8 : 16;
+      rs.health = Math.max(0, rs.health - dmg*(1-rs.stat.durability*0.02));
+      rs.speed *= (b.type==='pothole') ? 0.7 : 0.35;
+      rs.shake = b.type==='pothole' ? 6 : 14;
+      rs.flash = 10;
+      AudioManager.crash();
+      if(b.type==='pylon') b.hit = true; // pylon knocked down, pothole persists as hazard
+    }
+  }
+  // traffic collisions
+  for(const t of rs.traffic){
+    const seg = segAt(Math.round(t.segIndex));
+    const tx = seg.centerX + t.offsetX;
+    const td = t.segIndex*rs.SEG_LEN;
+    if(Math.abs(td-rs.distance)<22 && Math.abs(rs.carX-tx)<32){
+      rs.health = Math.max(0, rs.health - 22*(1-rs.stat.durability*0.02));
+      rs.speed *= 0.3;
+      rs.shake = 16; rs.flash=12;
+      AudioManager.crash();
+      t.baseSeg += 40; // bump it forward so it's not stuck colliding every frame
+    }
+  }
+  // coins
+  for(const c of rs.coins){
+    if(c.collected) continue;
+    const seg = segAt(c.segIndex);
+    const cx = seg.centerX + c.offsetX;
+    const cd = c.segIndex*rs.SEG_LEN;
+    if(Math.abs(cd-rs.distance)<18 && Math.abs(rs.carX-cx)<22){
+      c.collected = true;
+      rs.coinsCollected++;
+      AudioManager.coin();
+    }
+  }
+  // nitro pickups
+  for(const n of rs.nitro){
+    if(n.collected) continue;
+    const seg = segAt(n.segIndex);
+    const nx = seg.centerX + n.offsetX;
+    const nd = n.segIndex*rs.SEG_LEN;
+    if(Math.abs(nd-rs.distance)<18 && Math.abs(rs.carX-nx)<22){
+      n.collected = true;
+      rs.nitroMeter = 100;
+      AudioManager.nitro();
+    }
+  }
+
+  if(rs.shake>0) rs.shake -= 0.6*dt*2;
+  if(rs.flash>0) rs.flash -= dt*2;
+
+  AudioManager.updateEngine(rs.speed/rs.maxSpeedVal);
+
+  if(rs.health<=0){ endLevel(false); return; }
+  if(rs.distance >= rs.level.length){ endLevel(true); return; }
+}
+
+/* ---- drawing ---- */
+function drawCarSprite(ctx, car, w, h, lean){
+  ctx.save();
+  ctx.rotate(lean);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(3,6,w/1.6,h/1.9,0,0,Math.PI*2); ctx.fill();
+
+  roundRectPath(ctx, -w/2,-h/2,w,h,9);
+  ctx.fillStyle = car.color; ctx.fill();
+
+  ctx.save();
+  roundRectPath(ctx, -w/2,-h/2,w,h,9); ctx.clip();
+  ctx.fillStyle = car.accent;
+  ctx.fillRect(-w/2, -h/2, w, h*0.18);
+  ctx.fillRect(-w/2, h*0.32-h/2, w, h*0.1);
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(140,190,230,0.85)';
+  roundRectPath(ctx, -w/2+6,-h/2+8,w-12,h*0.22,4); ctx.fill();
+
+  ctx.fillStyle = '#111a2e';
+  ctx.fillRect(-w/2-3, -h/2+8, 4, h*0.28);
+  ctx.fillRect(w/2-1, -h/2+8, 4, h*0.28);
+  ctx.fillRect(-w/2-3, h*0.05, 4, h*0.28);
+  ctx.fillRect(w/2-1, h*0.05, 4, h*0.28);
+
+  ctx.fillStyle = '#fff7cc';
+  ctx.beginPath(); ctx.arc(-w/2+6,-h/2+4,3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(w/2-6,-h/2+4,3,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ff4d4d';
+  ctx.fillRect(-w/2+3,h/2-6,6,4);
+  ctx.fillRect(w/2-9,h/2-6,6,4);
+  ctx.restore();
+}
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+let stars = [];
+function initStars(){
+  stars = [];
+  for(let i=0;i<80;i++) stars.push({x:Math.random()*W, y:Math.random()*H*0.55, r:Math.random()*1.5+0.3, tw:Math.random()*7});
+}
+initStars();
+
+function draw(){
+  const rs = RunState;
+  ctx.clearRect(0,0,W,H);
+  if(!rs) return;
+  const map = rs.map;
+  const grd = ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0, map.grad[0]); grd.addColorStop(0.45, map.grad[1]); grd.addColorStop(1,'#14203f');
+  ctx.fillStyle = grd; ctx.fillRect(0,0,W,H);
+
+  // stars/ambience
+  ctx.save();
+  stars.forEach(s=>{
+    s.tw+=0.02;
+    ctx.globalAlpha = 0.4+Math.sin(s.tw)*0.35;
+    ctx.fillStyle = '#dfe9ff';
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+
+  const viewAhead = 950;
+  const startDist = rs.distance-40;
+  let leftPts=[], rightPts=[], centerPts=[];
+  for(let d=startDist; d<startDist+viewAhead; d+=rs.SEG_LEN){
+    const screenY = (H-140) - (d-rs.distance);
+    if(screenY<-40) break;
+    const road = roadAtDistance(Math.max(0,d));
+    const cx = W/2 + (road.centerX-rs.carX);
+    const half = road.width/2;
+    leftPts.push({x:cx-half,y:screenY});
+    rightPts.push({x:cx+half,y:screenY});
+    centerPts.push({x:cx,y:screenY});
+  }
+
+  ctx.fillStyle = map.road;
+  ctx.beginPath();
+  if(leftPts.length){
+    ctx.moveTo(leftPts[0].x,leftPts[0].y);
+    leftPts.forEach(p=>ctx.lineTo(p.x,p.y));
+    for(let i=rightPts.length-1;i>=0;i--) ctx.lineTo(rightPts[i].x,rightPts[i].y);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.lineWidth=4; ctx.strokeStyle=map.edge; ctx.shadowColor=map.accentGlow; ctx.shadowBlur=8;
+  ctx.beginPath(); leftPts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+  ctx.beginPath(); rightPts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle=map.line; ctx.lineWidth=3; ctx.setLineDash([16,18]);
+  ctx.beginPath(); centerPts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // finish line
+  if(rs.level.length-startDist < viewAhead && rs.level.length-startDist>0){
+    const road = roadAtDistance(rs.level.length);
+    const screenY = (H-140) - (rs.level.length-rs.distance);
+    const cx = W/2 + (road.centerX-rs.carX);
+    const half = road.width/2;
+    const tiles=10, tw=(half*2)/tiles;
+    for(let i=0;i<tiles;i++){
+      ctx.fillStyle = i%2===0?'#111':'#f2f2f2';
+      ctx.fillRect(cx-half+i*tw, screenY-8, tw, 16);
+    }
+    ctx.fillStyle='#ffd452'; ctx.font='bold 13px Segoe UI'; ctx.textAlign='center';
+    ctx.shadowColor='rgba(255,212,82,0.8)'; ctx.shadowBlur=10;
+    ctx.fillText('FINISH', cx, screenY-16); ctx.shadowBlur=0;
+  }
+
+  // entities
+  const drawAt = (segIndex, offsetX, painter)=>{
+    const d = segIndex*rs.SEG_LEN;
+    if(d<startDist-40||d>startDist+viewAhead) return;
+    const seg = segAt(segIndex);
+    const screenY = (H-140) - (d-rs.distance);
+    const cx = W/2 + (seg.centerX+offsetX-rs.carX);
+    painter(cx,screenY);
+  };
+  rs.barriers.forEach(b=>{
+    if(b.hit && b.type==='pylon') return;
+    drawAt(b.segIndex, b.offsetX, (x,y)=> b.type==='pothole' ? drawPothole(x,y) : drawPylon(x,y,map.obstacleColor));
+  });
+  rs.coins.forEach(c=>{ if(!c.collected) drawAt(c.segIndex,c.offsetX,drawCoin); });
+  rs.nitro.forEach(n=>{ if(!n.collected) drawAt(n.segIndex,n.offsetX,drawNitroPickup); });
+  rs.traffic.forEach(t=>{
+    drawAt(Math.round(t.segIndex), t.offsetX, (x,y)=> drawTrafficCar(x,y,map.trafficColor));
+  });
+
+  // player car
+  ctx.save();
+  const jitter = rs.shake>0 ? (Math.random()-0.5)*rs.shake : 0;
+  ctx.translate(W/2+jitter, H-140);
+  const lean = (keys.left?-1:keys.right?1:0)*0.08;
+  const beam = ctx.createRadialGradient(0,-30,4,0,-90,150);
+  beam.addColorStop(0,'rgba(255,255,220,0.3)'); beam.addColorStop(1,'rgba(255,255,220,0)');
+  ctx.fillStyle=beam; ctx.beginPath(); ctx.ellipse(0,-70,90,150,0,0,Math.PI*2); ctx.fill();
+  if(rs.nitroActive>0){
+    ctx.fillStyle='rgba(79,209,255,0.5)';
+    ctx.beginPath(); ctx.ellipse(0,32,10,20+rs.nitroActive*2,0,0,Math.PI*2); ctx.fill();
+  }
+  drawCarSprite(ctx, rs.car, 34, 56, lean);
+  ctx.restore();
+
+  if(rs.flash>0){ ctx.fillStyle=`rgba(255,90,60,${rs.flash/10*0.3})`; ctx.fillRect(0,0,W,H); }
+
+  const vg = ctx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.75);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.5)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+}
+function drawPylon(x,y,color){
+  ctx.save(); ctx.translate(x,y);
+  const g=ctx.createRadialGradient(0,0,2,0,0,20); g.addColorStop(0,color+'e6'); g.addColorStop(1,color+'00');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(0,-13); ctx.lineTo(8,9); ctx.lineTo(-8,9); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#fff4ea'; ctx.fillRect(-5,0,10,3);
+  ctx.restore();
+}
+function drawPothole(x,y){
+  ctx.save(); ctx.translate(x,y);
+  ctx.fillStyle='#0a0a0a'; ctx.beginPath(); ctx.ellipse(0,0,15,9,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#3a3a3a'; ctx.lineWidth=2; ctx.stroke();
+  ctx.restore();
+}
+function drawCoin(x,y){
+  ctx.save(); ctx.translate(x,y);
+  ctx.fillStyle='#ffd452'; ctx.shadowColor='rgba(255,212,82,0.8)'; ctx.shadowBlur=6;
+  ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0; ctx.strokeStyle='#a8790a'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.restore();
+}
+function drawNitroPickup(x,y){
+  ctx.save(); ctx.translate(x,y);
+  ctx.fillStyle='#4fd1ff'; ctx.shadowColor='rgba(79,209,255,0.9)'; ctx.shadowBlur=10;
+  roundRectPath(ctx,-7,-10,14,20,4); ctx.fill();
+  ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.font='bold 9px Segoe UI'; ctx.textAlign='center';
+  ctx.fillText('N',0,3);
+  ctx.restore();
+}
+function drawTrafficCar(x,y,color){
+  ctx.save(); ctx.translate(x,y);
+  const fakeCar = { color, accent:'#00000055' };
+  drawCarSprite(ctx, fakeCar, 30, 50, Math.PI);
+  ctx.restore();
+}
+
+function updateHUD(){
+  const rs = RunState;
+  if(!rs) return;
+  document.getElementById('healthBarInner').style.width = Math.max(0,(rs.health/rs.maxHealth)*100)+'%';
+  document.getElementById('healthBarInner').style.background = (rs.health/rs.maxHealth<0.3) ?
+    'linear-gradient(90deg,#ff5f6d,#ff9a9a)' : 'linear-gradient(90deg,var(--green),#8ee6a8)';
+  document.getElementById('nitroBarInner').style.width = rs.nitroMeter+'%';
+  document.getElementById('hudSpeed').textContent = Math.round(rs.speed*22);
+  document.getElementById('hudCoins').textContent = rs.coinsCollected;
+}
+
+let lastFrameTime = performance.now();
+function frame(now){
+  const dt = Math.min(2, (now-lastFrameTime)/16.67);
+  lastFrameTime = now;
+  if(Nav.get()==='screen-game'){
+    update(dt);
+    draw();
+    updateHUD();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+let settingsReturnScreen = 'screen-menu';
+function openSettings(returnTo){
+  settingsReturnScreen = returnTo;
+  syncSettingsUI();
+  if(returnTo==='screen-game' && RunState){ /* keep paused modal hidden while in settings */ 
+    document.getElementById('modalPause').classList.remove('active');
+  }
+  Nav.show('screen-settings');
+}
+function syncSettingsUI(){
+  const s = SaveSystem.get();
+  if(!s) return;
+  document.getElementById('musicVol').value = s.settings.musicVol;
+  document.getElementById('sfxVol').value = s.settings.sfxVol;
+}
+document.getElementById('musicVol').addEventListener('input', (e)=>{
+  const s = SaveSystem.get(); s.settings.musicVol = +e.target.value;
+  AudioManager.setVolumes(s.settings); SaveSystem.save();
+});
+document.getElementById('sfxVol').addEventListener('input', (e)=>{
+  const s = SaveSystem.get(); s.settings.sfxVol = +e.target.value;
+  AudioManager.setVolumes(s.settings); SaveSystem.save();
+});
+document.getElementById('btnSettingsBack').addEventListener('click', ()=>{
+  AudioManager.click();
+  if(settingsReturnScreen==='screen-game'){
+    Nav.show('screen-game');
+    if(RunState && !RunState.ended){
+      RunState.running = false;
+      document.getElementById('modalPause').classList.add('active');
+    }
+  } else {
+    Nav.show(settingsReturnScreen);
+  }
+});
+document.getElementById('btnResetProgress').addEventListener('click', async ()=>{
+  if(!confirm('Reset all progress, coins, and unlocks? This cannot be undone.')) return;
+  AudioManager.click();
+  await SaveSystem.reset();
+  refreshCurrencyChips();
+  goMenu();
+});
+
+})();
+</script>
+</body>
+</html>
